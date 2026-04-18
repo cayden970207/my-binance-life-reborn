@@ -51,6 +51,12 @@ export default class Trajectory extends ui.view.DefaultTheme.TrajectoryUI {
     #talents;
     #enableExtend;
 
+    hidePropertyPanel() {
+        const header = this.getChildAt(0);
+        if(header) header.visible = false;
+        this.boxTrajectory.top = 80;
+    }
+
     init({propertyAllocate, talents, enableExtend}) {
         this.#enableExtend = enableExtend;
         this.boxParticle.visible = false;
@@ -59,8 +65,8 @@ export default class Trajectory extends ui.view.DefaultTheme.TrajectoryUI {
         this.#trajectoryItems = [];
         this.#isEnd = false;
         this.#talents = talents;
+        this.hidePropertyPanel();
         core.start(propertyAllocate);
-        this.updateProperty();
         this.onNext();
     }
 
@@ -75,14 +81,7 @@ export default class Trajectory extends ui.view.DefaultTheme.TrajectoryUI {
     }
 
     updateProperty() {
-        const types = core.PropertyTypes;
-        const propertys = core.propertys;
-
-        this.labCharm.text = propertys[types.CHR];
-        this.labIntelligence.text = propertys[types.INT];
-        this.labStrength.text = propertys[types.STR];
-        this.labMoney.text = propertys[types.MNY];
-        this.labSpirit.text = propertys[types.SPR];
+        // Player-facing attributes are intentionally hidden.
     }
 
     onNext() {
@@ -137,6 +136,7 @@ export default class Trajectory extends ui.view.DefaultTheme.TrajectoryUI {
 
     renderTrajectory(age, content) {
         const item = this.#createTrajectoryItem();
+        const grade = content.reduce((max, { grade = 0 }) => Math.max(max, grade), 0);
         item.labAge.text = ''+age;
         item.labContent.text = content.map(
             ({type, description, grade, name, postEvent}) => {
@@ -148,7 +148,7 @@ export default class Trajectory extends ui.view.DefaultTheme.TrajectoryUI {
                 }
             }
         ).join('\n');
-        item.grade(content[content.length - 1].grade);
+        item.grade(grade);
         this.vboxTrajectory.addChild(item);
         this.#trajectoryItems.push(item);
         item.y = this.vboxTrajectory.height;

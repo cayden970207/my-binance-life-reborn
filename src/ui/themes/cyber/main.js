@@ -40,11 +40,11 @@ export default class CyberMain extends ui.view.CyberTheme.CyberMainUI {
     startCZ() {
         const cz = core.characterById('1');
         if (!cz) return $ui.switchView(UI.pages.CELEBRITY);
-        const { property: propertyAllocate, talent: talents } = cz;
+        const { talent: talents } = cz;
         core.remake(talents.map(t => t.id));
         $ui.switchView(
             UI.pages.TRAJECTORY,
-            { propertyAllocate, talents, enableExtend: false }
+            { propertyAllocate: {}, talents, enableExtend: false }
         );
     }
 }

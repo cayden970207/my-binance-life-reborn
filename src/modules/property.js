@@ -83,11 +83,20 @@ class Property {
     initial({age, total}) {
         this.#ageData = age;
         for(const a in age) {
-            let { event, talent } = age[a];
+            let { event, talent, cameo } = age[a];
             if(!Array.isArray(event))
                 event = event?.split(',') || [];
 
             event = event.map(v=>{
+                const value = `${v}`.split('*').map(n=>Number(n));
+                if(value.length==1) value.push(1);
+                return value;
+            });
+
+            if(!Array.isArray(cameo))
+                cameo = cameo?.split(',') || [];
+
+            cameo = cameo.map(v=>{
                 const value = `${v}`.split('*').map(n=>Number(n));
                 if(value.length==1) value.push(1);
                 return value;
@@ -98,7 +107,7 @@ class Property {
 
             talent = talent.map(v=>Number(v));
 
-            age[a] = { event, talent };
+            age[a] = { event, talent, cameo };
         }
         this.#total = total;
     }
@@ -356,8 +365,8 @@ class Property {
     ageNext() {
         this.change(this.TYPES.AGE, 1);
         const age = this.get(this.TYPES.AGE);
-        const {event, talent} = this.getAgeData(age);
-        return {age, event, talent};
+        const {event, talent, cameo} = this.getAgeData(age);
+        return {age, event, talent, cameo};
     }
 
     getAgeData(age) {

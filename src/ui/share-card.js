@@ -1,6 +1,8 @@
 // 分享卡片模块 — viral传播核心功能
 // 当summary页面激活时注入分享按钮,点击生成精美卡片
 
+import { formatUsdLong, formatUsdShort, getCurrentUniverseResult } from './universe-result.js';
+
 const GAME_TITLE = '转生之我的币安人生';
 const GAME_URL = 'my-binance-life-reborn.vercel.app';
 
@@ -210,6 +212,11 @@ function injectStyles() {
       -webkit-text-fill-color: transparent;
       animation: bsc-gold-shine 2s linear infinite;
     }
+    #bsc-card.bsc-anomaly {
+      border-color: #fb7185;
+      background: linear-gradient(160deg, #210b17 0%, #341122 55%, #0B1020 100%);
+      box-shadow: 0 0 50px rgba(251,113,133,0.35);
+    }
     @keyframes bsc-gold-shine {
       from { background-position: 0% 50%; }
       to { background-position: 200% 50%; }
@@ -284,6 +291,102 @@ function injectStyles() {
     .bsc-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
     .bsc-row-label { color: #a1a1aa; }
     .bsc-row-value { color: #fff; font-weight: bold; }
+    .bsc-cg-id {
+      font-size: 40px;
+      font-weight: bold;
+      color: #FCD535;
+      letter-spacing: 3px;
+      line-height: 1.1;
+      margin: 8px 0 4px;
+    }
+    .bsc-universe-name {
+      font-size: 22px;
+      font-weight: bold;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+    .bsc-life-age {
+      font-size: 18px;
+      color: #fef08a;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+    .bsc-life-lead {
+      font-size: 12px;
+      color: #a1a1aa;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+    .bsc-universe-subtitle {
+      color: #d4d4d8;
+      font-size: 13px;
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+    .bsc-pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+    .bsc-pill {
+      font-size: 11px;
+      padding: 4px 10px;
+      border: 1px solid rgba(240,185,11,0.35);
+      border-radius: 999px;
+      background: rgba(240,185,11,0.08);
+      color: #fef3c7;
+      letter-spacing: 1px;
+    }
+    .bsc-money-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .bsc-money-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(240,185,11,0.16);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .bsc-money-card-wide {
+      grid-column: span 2;
+    }
+    .bsc-money-title {
+      color: #a1a1aa;
+      font-size: 11px;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .bsc-money-value {
+      font-size: 24px;
+      font-weight: bold;
+      line-height: 1.2;
+    }
+    .bsc-money-value-neg { color: #fb7185; }
+    .bsc-money-value-pos { color: #fef08a; }
+    .bsc-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .bsc-tag {
+      font-size: 12px;
+      color: #0B1020;
+      background: linear-gradient(135deg, #F0B90B 0%, #FCD535 100%);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-weight: bold;
+    }
+    .bsc-commentary-title {
+      font-size: 12px;
+      color: #F0B90B;
+      letter-spacing: 2px;
+      margin-bottom: 6px;
+    }
     .bsc-stat {
       display: flex;
       align-items: center;
@@ -395,24 +498,22 @@ function getRunData() {
   try {
     const summary = globalThis.core.summary;
     const achievements = globalThis.core.achievements || [];
-    const props = globalThis.core.propertys || {};
+    const property = globalThis.core.request?.(globalThis.core.Module.PROPERTY);
+    const currentEvents = property?.get(globalThis.core.PropertyTypes.EVT) || [];
+    const choiceCount = currentEvents.filter(id => id >= 15800 && id < 16000).length;
+    const universe = getCurrentUniverseResult(globalThis.core, { persist: true });
 
     return {
       age: summary.HAGE?.value || 0,
-      ageJudge: globalThis.$lang?.[summary.HAGE?.judge] || '',
-      total: summary.SUM?.value || 0,
-      totalGrade: summary.SUM?.grade || 0,
-      totalJudge: globalThis.$lang?.[summary.SUM?.judge] || '',
-      chr: summary.HCHR?.value || 0,
-      int: summary.HINT?.value || 0,
-      str: summary.HSTR?.value || 0,
-      mny: summary.HMNY?.value || 0,
-      spr: summary.HSPR?.value || 0,
+      achievementCount: achievements.filter(a => a.isAchieved).length,
+      eventCount: currentEvents.length,
+      choiceCount,
       achievements: achievements
         .filter(a => a.isAchieved)
         .sort((a, b) => b.grade - a.grade)
-        .slice(0, 5),
+        .slice(0, 3),
       times: globalThis.core.times || 0,
+      universe,
     };
   } catch (e) {
     console.warn('[ShareCard] getRunData failed', e);
@@ -422,55 +523,56 @@ function getRunData() {
 
 function renderCard(data) {
   const quote = cardQuotes[Math.floor(Math.random() * cardQuotes.length)];
-  const achs = data.achievements.length > 0
-    ? data.achievements.map(a => `<div class="bsc-ach bsc-ach-grade${a.grade}"><span class="bsc-ach-icon">🏆</span>${a.name}</div>`).join('')
-    : '<div class="bsc-ach" style="color:#71717a">本次重开无新成就解锁</div>';
-
+  const universe = data.universe || {};
   const topAch = data.achievements[0];
-  const epilogue = topAch
-    ? (achievementEpilogues[topAch.id] || fallbackByGrade[topAch.grade] || fallbackByGrade[0])
-    : noAchEpilogue;
-
-  const topEndingBlock = topAch
-    ? `
-    <div class="bsc-top-ending">
-      <div class="bsc-top-ending-label">══ 人生结局 ══</div>
-      <div class="bsc-top-ending-name bsc-ach-grade${topAch.grade}">${topAch.name}</div>
-    </div>`
-    : '';
+  const epilogue = universe.epitaph
+    || (topAch ? (achievementEpilogues[topAch.id] || fallbackByGrade[topAch.grade] || fallbackByGrade[0]) : noAchEpilogue);
+  const tags = (universe.tags || []).slice(0, 3).map(tag => `<span class="bsc-tag">${tag}</span>`).join('');
 
   return `
     <div class="bsc-head">
       <div class="bsc-title">${GAME_TITLE}</div>
-      <div class="bsc-subtitle">MY BINANCE LIFE · REBORN</div>
+      <div class="bsc-subtitle">PARALLEL CZ RESULT</div>
+      <div class="bsc-cg-id">${universe.czCode || 'CZ-000'}</div>
+      <div class="bsc-life-age">享年 ${data.age}</div>
+      <div class="bsc-life-lead">这个平行宇宙的你</div>
+      <div class="bsc-universe-name">${universe.title || '普通一生'}</div>
+      <div class="bsc-universe-subtitle">${universe.subtitle || '这把还没有长成一个足够离谱的版本。'}</div>
+      <div class="bsc-pill-row">
+        <span class="bsc-pill">${universe.category || '普通人生'}</span>
+        <span class="bsc-pill" style="color:${universe.rarityColor || '#fef3c7'};border-color:${universe.rarityColor || '#F0B90B'}66">${universe.rarity || '普通宇宙'}</span>
+      </div>
     </div>
 
-    ${topEndingBlock}
-
-    <div class="bsc-row"><span class="bsc-row-label">享年</span><span class="bsc-row-value" style="color:${judgeColors[data.totalGrade]}">${data.age} 岁 · ${data.ageJudge}</span></div>
-    <div class="bsc-row"><span class="bsc-row-label">总评</span><span class="bsc-row-value" style="color:${judgeColors[data.totalGrade]}">${data.totalJudge}</span></div>
-    <div class="bsc-row"><span class="bsc-row-label">重开次数</span><span class="bsc-row-value">第 ${data.times} 次</span></div>
+    <div class="bsc-money-grid">
+      <div class="bsc-money-card">
+        <div class="bsc-money-title">终局资产</div>
+        <div class="bsc-money-value ${universe.finalNetWorth < 0 ? 'bsc-money-value-neg' : 'bsc-money-value-pos'}">${formatUsdShort(universe.finalNetWorth || 0)}</div>
+      </div>
+      <div class="bsc-money-card">
+        <div class="bsc-money-title">峰值资产</div>
+        <div class="bsc-money-value bsc-money-value-pos">${formatUsdShort(universe.peakNetWorth || 0)}</div>
+      </div>
+      <div class="bsc-money-card bsc-money-card-wide">
+        <div class="bsc-money-title">蒸发资产</div>
+        <div class="bsc-money-value ${universe.drawdown > 0 ? 'bsc-money-value-neg' : 'bsc-money-value-pos'}">${formatUsdShort(universe.drawdown || 0)}</div>
+      </div>
+    </div>
 
     <div class="bsc-section">
-      <div class="bsc-section-title">——— 属性终结值 ———</div>
-      <div class="bsc-stat"><span class="bsc-stat-name">魅力</span><span class="bsc-stat-bar">${bar(data.chr)}</span><span class="bsc-stat-val">${data.chr}</span></div>
-      <div class="bsc-stat"><span class="bsc-stat-name">技术</span><span class="bsc-stat-bar">${bar(data.int)}</span><span class="bsc-stat-val">${data.int}</span></div>
-      <div class="bsc-stat"><span class="bsc-stat-name">道德</span><span class="bsc-stat-bar">${bar(data.str)}</span><span class="bsc-stat-val">${data.str}</span></div>
-      <div class="bsc-stat"><span class="bsc-stat-name">商嗅</span><span class="bsc-stat-bar">${bar(data.mny)}</span><span class="bsc-stat-val">${data.mny}</span></div>
-      <div class="bsc-stat"><span class="bsc-stat-name">快乐</span><span class="bsc-stat-bar">${bar(data.spr)}</span><span class="bsc-stat-val">${data.spr}</span></div>
+      <div class="bsc-section-title">——— 这个版本的关键词 ———</div>
+      <div class="bsc-tags">${tags}</div>
     </div>
 
     <div class="bsc-section">
-      <div class="bsc-section-title">——— 解锁成就 ———</div>
-      ${achs}
+      <div class="bsc-commentary-title">评语</div>
+      <div class="bsc-epilogue">${epilogue}</div>
     </div>
-
-    <div class="bsc-epilogue">${epilogue}</div>
 
     <div class="bsc-quote">「${quote}」</div>
 
     <div class="bsc-footer">
-      <span>#转生之我的币安人生</span>
+      <span>#CZ多元宇宙 #Binance</span>
       <span class="bsc-url">${GAME_URL}</span>
     </div>
   `;
@@ -530,6 +632,7 @@ async function cardToImage(cardEl) {
 
 function renderCardCanvas(canvas, ctx, rect) {
   const data = getRunData() || {};
+  const universe = data.universe || {};
   // 渐变背景
   const gradient = ctx.createLinearGradient(0, 0, 0, rect.height);
   gradient.addColorStop(0, '#0B1020');
@@ -547,35 +650,62 @@ function renderCardCanvas(canvas, ctx, rect) {
   ctx.fillText(GAME_TITLE, rect.width / 2, 50);
   ctx.fillStyle = '#a1a1aa';
   ctx.font = '11px monospace';
-  ctx.fillText('MY BINANCE LIFE · REBORN', rect.width / 2, 72);
+  ctx.fillText('PARALLEL CZ RESULT', rect.width / 2, 72);
   // 主体文本
+  let y = 118;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#FCD535';
+  ctx.font = 'bold 40px "SimHei", monospace';
+  ctx.fillText(universe.czCode || 'CZ-000', rect.width / 2, y); y += 34;
+  ctx.fillStyle = '#fef08a';
+  ctx.font = 'bold 22px "SimHei", monospace';
+  ctx.fillText(`享年 ${data.age}`, rect.width / 2, y); y += 28;
+  ctx.fillStyle = '#8ddce5';
+  ctx.font = '14px "SimHei", monospace';
+  ctx.fillText('这个平行宇宙的你', rect.width / 2, y); y += 28;
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 24px "SimHei", monospace';
+  ctx.fillText(universe.title || '普通一生', rect.width / 2, y); y += 24;
+  ctx.fillStyle = '#cbd5e1';
+  ctx.font = '14px "SimHei", monospace';
+  ctx.fillText(universe.subtitle || '这把还没有长成一个足够离谱的版本。', rect.width / 2, y); y += 38;
+
   ctx.textAlign = 'left';
+  ctx.fillStyle = '#F0B90B';
+  ctx.font = '13px "SimHei", monospace';
+  ctx.fillText('──── 资产快照 ────', 30, y); y += 28;
+  ctx.fillStyle = '#fff';
+  ctx.font = '16px "SimHei", monospace';
+  const wealthRows = [
+    ['终局资产', universe.finalNetWorth],
+    ['峰值资产', universe.peakNetWorth],
+    ['蒸发资产', universe.drawdown],
+  ];
+  for (const [label, value] of wealthRows) {
+    ctx.fillStyle = label === '终局资产' && value < 0 ? '#fb7185' : '#fff';
+    ctx.fillText(`${label}: ${formatUsdLong(value || 0)}`, 30, y);
+    y += 24;
+  }
+
+  y += 10;
+  ctx.fillStyle = '#F0B90B';
+  ctx.font = '13px "SimHei", monospace';
+  ctx.fillText('──── 这个版本 ────', 30, y); y += 28;
+  ctx.fillStyle = '#fff';
+  ctx.font = '15px "SimHei", monospace';
+  ctx.fillText(`类型: ${universe.category || '普通人生'}`, 30, y); y += 22;
+  ctx.fillText(`关键抉择: ${data.choiceCount} 次`, 30, y); y += 22;
+  ctx.fillText(`触发事件: ${data.eventCount} 个`, 30, y); y += 28;
+
+  ctx.fillStyle = '#F0B90B';
+  ctx.font = '13px "SimHei", monospace';
+  ctx.fillText('──── 评语 ────', 30, y); y += 26;
   ctx.fillStyle = '#fff';
   ctx.font = '14px "SimHei", monospace';
-  let y = 110;
-  ctx.fillText(`享年: ${data.age} 岁`, 30, y); y += 24;
-  ctx.fillText(`总评: ${data.totalJudge || '-'}`, 30, y); y += 24;
-  ctx.fillText(`重开次数: 第 ${data.times} 次`, 30, y); y += 30;
-  ctx.fillStyle = '#F0B90B';
-  ctx.fillText('──── 属性终结值 ────', 30, y); y += 26;
-  ctx.fillStyle = '#fff';
-  const stats = [
-    ['魅力', data.chr], ['技术', data.int], ['道德', data.str],
-    ['商嗅', data.mny], ['快乐', data.spr],
-  ];
-  for (const [n, v] of stats) {
-    ctx.fillText(`${n}: ${bar(v)} ${v}`, 30, y); y += 20;
-  }
+  const comment = universe.epitaph || '你活成了某个平行宇宙里独一份的自己。';
+  ctx.fillText(comment, 30, y); y += 34;
+
   y += 10;
-  ctx.fillStyle = '#F0B90B';
-  ctx.fillText('──── 解锁成就 ────', 30, y); y += 26;
-  ctx.fillStyle = '#fff';
-  for (const a of (data.achievements || []).slice(0, 5)) {
-    ctx.fillStyle = gradeColors[a.grade] || '#fff';
-    ctx.fillText(`🏆 ${a.name}`, 30, y); y += 22;
-  }
-  y += 10;
-  ctx.fillStyle = '#F0B90B';
   ctx.font = 'italic 14px "SimHei", monospace';
   ctx.textAlign = 'center';
   const quote = cardQuotes[Math.floor(Math.random() * cardQuotes.length)];
@@ -584,7 +714,7 @@ function renderCardCanvas(canvas, ctx, rect) {
   ctx.font = '10px monospace';
   ctx.fillStyle = '#71717a';
   ctx.textAlign = 'left';
-  ctx.fillText('#转生之我的币安人生', 30, rect.height - 20);
+  ctx.fillText('#CZ多元宇宙 #Binance', 30, rect.height - 20);
   ctx.textAlign = 'right';
   ctx.fillStyle = '#F0B90B';
   ctx.fillText(GAME_URL, rect.width - 30, rect.height - 20);
@@ -609,14 +739,14 @@ export function openShareCard({ onRestart } = {}) {
 
   injectStyles();
 
-  const topAch = data.achievements[0];
-  const isLegendary = topAch && topAch.grade === 3;
+  const isLegendary = data.universe?.rarityGrade >= 3 && data.universe?.rarity !== '异常宇宙';
+  const isAnomaly = data.universe?.rarity === '异常宇宙';
 
   const overlay = document.createElement('div');
   overlay.className = 'bsc-overlay';
   overlay.innerHTML = `
     <div class="bsc-modal">
-      <div id="bsc-card" class="${isLegendary ? 'bsc-legendary' : ''}">
+      <div id="bsc-card" class="${isLegendary ? 'bsc-legendary' : ''} ${isAnomaly ? 'bsc-anomaly' : ''}">
         ${onRestart ? '' : '<button class="bsc-close" aria-label="close">×</button>'}
         ${renderCard(data)}
       </div>
@@ -648,7 +778,7 @@ export function openShareCard({ onRestart } = {}) {
       const dataUrl = await cardToImage(cardEl);
       const a = document.createElement('a');
       a.href = dataUrl;
-      a.download = `币安人生_第${data.times}次.png`;
+      a.download = `${data.universe?.czCode || 'CZ-000'}_${data.universe?.title || 'CZ宇宙'}.png`;
       a.click();
       showToast('卡片已下载');
     } catch (e) {
@@ -658,16 +788,16 @@ export function openShareCard({ onRestart } = {}) {
   });
 
   overlay.querySelector('#bsc-tweet').addEventListener('click', () => {
-    const topAch = data.achievements[0]?.name || '普通一生';
+    const universe = data.universe || {};
     const text = encodeURIComponent(
-      `我在《转生之我的币安人生》活到${data.age}岁,解锁结局:${topAch}\n总评:${data.totalJudge}\n\n#转生之我的币安人生 #CZ #Binance\n${GAME_URL}`
+      `${universe.czCode || 'CZ-000'}\n享年 ${data.age}\n\n这个平行宇宙的你\n${universe.title || '普通一生'}\n\n终局资产 ${formatUsdShort(universe.finalNetWorth || 0)}\n峰值资产 ${formatUsdShort(universe.peakNetWorth || 0)}\n蒸发资产 ${formatUsdShort(universe.drawdown || 0)}\n\n评语:\n${universe.epitaph || '你活成了某个平行宇宙里独一份的自己。'}\n\n#CZ多元宇宙 #Binance\n${GAME_URL}`
     );
     window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
   });
 
   overlay.querySelector('#bsc-copy').addEventListener('click', () => {
-    const topAch = data.achievements[0]?.name || '普通一生';
-    const text = `我在《${GAME_TITLE}》活到${data.age}岁,解锁结局: ${topAch}\n总评: ${data.totalJudge} · 第${data.times}次重开\n属性: 魅${data.chr}/技${data.int}/道${data.str}/商${data.mny}/乐${data.spr}\n\n${GAME_URL}`;
+    const universe = data.universe || {};
+    const text = `${universe.czCode || 'CZ-000'}\n享年 ${data.age}\n\n这个平行宇宙的你\n${universe.title || '普通一生'}\n\n终局资产 ${formatUsdLong(universe.finalNetWorth || 0)}\n峰值资产 ${formatUsdLong(universe.peakNetWorth || 0)}\n蒸发资产 ${formatUsdLong(universe.drawdown || 0)}\n\n评语:\n${universe.epitaph || '你活成了某个平行宇宙里独一份的自己。'}\n\n${GAME_URL}`;
     navigator.clipboard.writeText(text).then(
       () => showToast('已复制到剪贴板'),
       () => showToast('复制失败')
@@ -693,7 +823,7 @@ export function mountShareButton() {
   injectStyles();
   const btn = document.createElement('button');
   btn.className = 'bsc-btn-share';
-  btn.textContent = '📸 生成分享卡';
+  btn.textContent = '📸 生成宇宙卡';
   btn.addEventListener('click', openShareCard);
   document.body.appendChild(btn);
   // 暴露给控制台使用

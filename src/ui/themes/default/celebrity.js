@@ -9,19 +9,13 @@ export default class Celebrity extends ui.view.DefaultTheme.CelebrityUI {
     #selected;
     static #createComponent = Laya.plugin.extractComponents(Celebrity.uiView, ['boxCharacter','boxTalent','boxUniqueUnGenerate']);
     #createCharacterItem(dataSource, click) {
-        const {name, property, talent} = dataSource;
+        const {name, talent} = dataSource;
         const style = $ui.common.characterItem;
         const item = Celebrity.#createComponent('boxCharacter');
         const vboxStates = item.getChildByName('vboxStates');
         const boxName = item.getChildByName('boxName');
         boxName.label = name;
-
-        const p = $_.clone(property);
-        for(const k in p)
-            if(Math.abs(p[k] - Math.PI) < 0.0000001)
-                p[k] = 'π';
-
-        vboxStates.label = $_.format($lang.F_PropertyStr, p);
+        vboxStates.label = '无属性模式 · 仅保留天赋与事件路线';
         $_.deepMapSet(boxName, style.name);
         $_.deepMapSet(vboxStates, style.state);
         for(const t of talent) {
@@ -126,7 +120,7 @@ export default class Celebrity extends ui.view.DefaultTheme.CelebrityUI {
         if(!this.#selected) return $$event('message', ['M_PleaseSelectOne']);
         if(!this.#selected.dataSource) return $$event('message', ['M_UnGenerate']);
 
-        const {property: propertyAllocate, talent: talents} = this.#selected.dataSource;
+        const {talent: talents} = this.#selected.dataSource;
         const replace = core.remake(talents.map(talent => talent.id));
         if(replace.length > 0) {
             $$event('message', [replace.map(v => ['F_TalentReplace', v])]);
@@ -134,7 +128,7 @@ export default class Celebrity extends ui.view.DefaultTheme.CelebrityUI {
         $ui.switchView(
             UI.pages.TRAJECTORY,
             {
-                propertyAllocate, talents,
+                propertyAllocate: {}, talents,
                 enableExtend: false,
             }
         );

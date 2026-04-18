@@ -40,7 +40,10 @@ export default class CyberTalent extends ui.view.CyberTheme.CyberTalentUI {
         }
 
         const talents = [...this.#selected].map(index => this.listTalents.array[index]);
-        $ui.switchView(UI.pages.PROPERTY, { talents, enableExtend: true});
+        $ui.switchView(
+            UI.pages.TRAJECTORY,
+            { propertyAllocate: {}, talents, enableExtend: true }
+        );
     }
 
     renderTalent(box, index) {

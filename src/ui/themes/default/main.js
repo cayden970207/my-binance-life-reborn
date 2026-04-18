@@ -57,11 +57,11 @@ export default class Main extends ui.view.DefaultTheme.MainUI {
         // 直接以 CZ 真身 (character id=1) 开始,跳过所有选择
         const cz = core.characterById('1');
         if (!cz) return $ui.switchView(UI.pages.CELEBRITY);
-        const { property: propertyAllocate, talent: talents } = cz;
+        const { talent: talents } = cz;
         core.remake(talents.map(t => t.id));
         $ui.switchView(
             UI.pages.TRAJECTORY,
-            { propertyAllocate, talents, enableExtend: false }
+            { propertyAllocate: {}, talents, enableExtend: false }
         );
     }
 }

@@ -132,14 +132,18 @@ class Life {
     }
 
     next() {
-        const {age, event, talent} = this.#property.ageNext();
+        const {age, event, talent, cameo} = this.#property.ageNext();
 
         const talentContent = this.doTalent(talent);
-        const eventContent = this.doEvent(this.random(event));
+        const eventId = this.random(event);
+        const eventContent = eventId ? this.doEvent(eventId) : [];
+        const hasChoice = eventContent.some(item => item?.choices?.length);
+        const cameoId = (!hasChoice && !this.#property.isEnd()) ? this.random(cameo) : null;
+        const cameoContent = cameoId ? this.doEvent(cameoId) : [];
 
         const isEnd = this.#property.isEnd();
 
-        const content = [talentContent, eventContent].flat();
+        const content = [talentContent, eventContent, cameoContent].flat();
         this.#achievement.achieve(this.AchievementOpportunity.TRAJECTORY);
         return { age, content, isEnd };
     }
@@ -206,11 +210,12 @@ class Life {
     }
 
     random(events) {
-        return util.weightRandom(
-            events.filter(
-                ([eventId])=>this.#event.check(eventId, this.#property)
-            )
+        if(!Array.isArray(events) || !events.length) return null;
+        const available = events.filter(
+            ([eventId])=>this.#event.check(eventId, this.#property)
         );
+        if(!available.length) return null;
+        return util.weightRandom(available);
     }
 
     talentRandom() {

@@ -31,6 +31,7 @@ const STORYLINE_RANGES = [
 // 需要自动去重(每个事件最多触发一次)的ID范围
 const DEDUP_RANGES = [
   [10900, 11499], // 所有主线剧情
+  [12300, 12319], // 中年角色 cameo
   [11900, 11940], // 重大人生变故(父母去世/离婚/坐牢等)
   [12000, 12299], // 2025-2026 热点事件
   [13000, 13209], // 死亡事件(自然只会触发一次,但以防万一)
@@ -42,6 +43,52 @@ function inRanges(id, ranges) {
 }
 function isStoryline(id) { return inRanges(id, STORYLINE_RANGES); }
 function needsDedup(id) { return inRanges(id, DEDUP_RANGES); }
+
+function sanitizeTimelineText(text) {
+  if (!text) return text;
+
+  let s = `${text}`;
+
+  // Strip leading absolute dates so event copy no longer clashes with the
+  // player's current run age.
+  s = s.replace(
+    /^(?:[12]\d{3}(?:[./-]\d{1,2}){0,2}|[12]\d{3}年(?:\d{1,2}月(?:\d{1,2}日?)?)?|\d{1,2}\.\d{1,2})(?:\s*\d{1,2}(?::\d{2})?点?)?\s*/u,
+    ''
+  );
+
+  // Remove embedded calendar years / full dates, but keep amounts and counts.
+  s = s
+    .replace(/[12]\d{3}-[12]\d{3}/gu, '')
+    .replace(/[12]\d{3}(?:[./-]\d{1,2}){1,2}/gu, '')
+    .replace(/[12]\d{3}年(?:\d{1,2}月(?:\d{1,2}日?)?)?/gu, '')
+    .replace(/(^|[，,。；;、\s])\d{1,2}\.\d{1,2}(?=[，,。；;、\s])/gu, '$1');
+
+  // Remove explicit player-age wording like "你35岁那年" / "你50岁了".
+  s = s
+    .replace(/你\d+岁那年[，,]?/gu, '你当时,')
+    .replace(/你\d+岁时[，,]?/gu, '你当时,')
+    .replace(/你\d+岁第一次/gu, '你第一次')
+    .replace(/你\d+岁(?:了)?[，,]?/gu, '你')
+    .replace(/\d+岁那年/gu, '那时')
+    .replace(/\d+岁时/gu, '当时')
+    .replace(/^\d+岁那年[，,]?/gu, '')
+    .replace(/^\d+岁[，,]?/gu, '');
+
+  // Collapse punctuation artifacts left behind by the removals.
+  s = s
+    .replace(/^[，,、。；;\s]+/gu, '')
+    .replace(/【抉择】[，,]/gu, '【抉择】')
+    .replace(/^(【抉择】)?凌晨[，,]\s*/u, '$1')
+    .replace(/^你当时,/gu, '后来,')
+    .replace(/([，,])当时才/gu, '$1后来才')
+    .replace(/你[，,]/gu, '你')
+    .replace(/[，,]\s*[，,]/gu, '，')
+    .replace(/[，,]\s*([。！？；;])/gu, '$1')
+    .replace(/\s{2,}/gu, ' ')
+    .trim();
+
+  return s || text;
+}
 
 // 把 include 里的 "TLT?[xxx]" 条件全部去掉,只保留 EVT?[]/AGE?/属性条件
 function relaxGates(includeStr) {
@@ -84,15 +131,20 @@ function buildEvents() {
       continue;
     }
     seen.add(id);
-    const entry = { id, event };
+    const entry = { id, event: sanitizeTimelineText(event) };
     if (extras.effect) entry.effect = extras.effect;
     if (extras.NoRandom) entry.NoRandom = extras.NoRandom;
     if (extras.branch) entry.branch = extras.branch;
     if (extras.include) entry.include = extras.include;
     if (extras.exclude) entry.exclude = extras.exclude;
-    if (extras.postEvent) entry.postEvent = extras.postEvent;
+    if (extras.postEvent) entry.postEvent = sanitizeTimelineText(extras.postEvent);
     if (extras.grade !== undefined) entry.grade = extras.grade;
-    if (extras.choices) entry.choices = extras.choices;
+    if (extras.choices) {
+      entry.choices = extras.choices.map(choice => ({
+        ...choice,
+        label: sanitizeTimelineText(choice.label),
+      }));
+    }
     // 主线剧情: 放开 include 里的 TLT?[] 硬门槛
     if (isStoryline(id) && entry.include) {
       const original = entry.include;
@@ -135,6 +187,13 @@ for (const a in ages) {
     if (!eventIdSet.has(eid)) { pruned++; return false; }
     return true;
   });
+  if (Array.isArray(ages[a].cameo)) {
+    ages[a].cameo = ages[a].cameo.filter(e => {
+      const eid = String(e).split('*')[0];
+      if (!eventIdSet.has(eid)) { pruned++; return false; }
+      return true;
+    });
+  }
 }
 if (pruned) console.log(`🔧 修复: 从age pool移除了${pruned}个不存在的event引用`);
 

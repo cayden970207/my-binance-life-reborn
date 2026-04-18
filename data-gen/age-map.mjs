@@ -33,6 +33,9 @@ const SHANGHAI_POOL = range(10800, 10899);
 const CRYPTO_AWAKEN_POOL = range(10900, 10999);
 const BINANCE_RISE_POOL = range(11000, 11199);
 const REGULATION_POOL = range(11300, 11499);
+const XU_MINGXING_POOL = [12300, 12301, 12302, 12303, 12304, 12305];
+const HEYI_POOL = [12306, 12307, 12308, 12309];
+const SUN_YUCHEN_POOL = [12310, 12311, 12312, 12313];
 const DAILY_POOL = range(11800, 11899);
 const OLD_AGE_POOL = range(11880, 11899).concat(range(11900, 11940));
 const ILLNESS_POOL = range(11900, 11940);
@@ -45,6 +48,7 @@ export function buildAges() {
 
   for (let age = 0; age <= 120; age++) {
     let pool = [];
+    let cameo = [];
     if (age === 0) {
       // 出生
       pool = [
@@ -110,6 +114,11 @@ export function buildAges() {
         ...DAILY_POOL.slice(0, 30).map(id => `${id}*1`),
         '13050*2','13051*1','13053*2','13063*1','13064*3','13065*2','13101*1',
       ];
+      cameo = [
+        ...XU_MINGXING_POOL.map(id => `${id}*6`),
+        ...HEYI_POOL.map(id => `${id}*5`),
+        ...SUN_YUCHEN_POOL.map(id => `${id}*1`),
+      ];
     } else if (age >= 45 && age <= 55) {
       // 事业中后期 - 监管/特赦/新阶段
       pool = [
@@ -119,6 +128,11 @@ export function buildAges() {
         ...CRYPTO_AWAKEN_POOL.map(id => `${id}*1`),
         ...DAILY_POOL.slice(0, 30).map(id => `${id}*2`),
         '13050*2','13051*2','13059*1','13063*2','13064*3','13100*2','13101*2',
+      ];
+      cameo = [
+        ...XU_MINGXING_POOL.map(id => `${id}*7`),
+        ...HEYI_POOL.map(id => `${id}*5`),
+        ...SUN_YUCHEN_POOL.map(id => `${id}*1`),
       ];
     } else if (age >= 51 && age <= 60) {
       // 50代 - 极低死亡(1%)
@@ -171,7 +185,7 @@ export function buildAges() {
         ...DEATH_TRIGGER.map(id => `${id}*10`),
       ];
     }
-    ages[String(age)] = { age, event: pool };
+    ages[String(age)] = cameo.length ? { age, event: pool, cameo } : { age, event: pool };
   }
 
   // 在指定年龄插入高权重抉择事件,保证必触发

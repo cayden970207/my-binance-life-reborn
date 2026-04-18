@@ -9,18 +9,12 @@ export default class CyberCelebrity extends ui.view.CyberTheme.CelebrityUI {
     #selected;
     static #createComponent = Laya.plugin.extractComponents(CyberCelebrity.uiView, ['boxCharacter','boxTalent','boxUniqueUnGenerate']);
     #createCharacterItem(dataSource, click) {
-        const {name, property, talent} = dataSource;
+        const {name, talent} = dataSource;
         const item = CyberCelebrity.#createComponent('boxCharacter');
         const vboxStates = item.getChildByName('vboxStates');
         const boxName = item.getChildByName('boxName');
         boxName.getChildByName('label').text = name;
-
-        const p = $_.clone(property);
-        for(const k in p)
-            if(Math.abs(p[k] - Math.PI) < 0.0000001)
-                p[k] = 'π';
-
-        vboxStates.getChildByName('label').text = $_.format($lang.F_PropertyStr, p);
+        vboxStates.getChildByName('label').text = '无属性模式 · 仅保留天赋与事件路线';
         for(const t of talent) {
             const i = CyberCelebrity.#createComponent('boxTalent');
             i.getChildByName('label').text = $_.format($lang.F_TalentSelection, t);
@@ -119,7 +113,7 @@ export default class CyberCelebrity extends ui.view.CyberTheme.CelebrityUI {
         if(!this.#selected) return $$event('message', ['M_PleaseSelectOne']);
         if(!this.#selected.dataSource) return $$event('message', ['M_UnGenerate']);
 
-        const {property: propertyAllocate, talent: talents} = this.#selected.dataSource;
+        const {talent: talents} = this.#selected.dataSource;
         const replace = core.remake(talents.map(talent => talent.id));
         if(replace.length > 0) {
             $$event('message', [replace.map(v => ['F_TalentReplace', v])]);
@@ -127,7 +121,7 @@ export default class CyberCelebrity extends ui.view.CyberTheme.CelebrityUI {
         $ui.switchView(
             UI.pages.TRAJECTORY,
             {
-                propertyAllocate, talents,
+                propertyAllocate: {}, talents,
                 enableExtend: false,
             }
         );

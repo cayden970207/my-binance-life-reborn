@@ -72,6 +72,12 @@ export default class CyberTrajectory extends ui.view.CyberTheme.CyberTrajectoryU
     #talents;
     #enableExtend;
 
+    hidePropertyPanel() {
+        const header = this.getChildAt(1);
+        if(header) header.visible = false;
+        this.panelTrajectory.parent.top = 126;
+    }
+
     init({propertyAllocate, talents, enableExtend}) {
         this.#enableExtend = enableExtend;
         this.boxParticle.visible = false;
@@ -80,8 +86,8 @@ export default class CyberTrajectory extends ui.view.CyberTheme.CyberTrajectoryU
         this.#trajectoryItems = [];
         this.#isEnd = false;
         this.#talents = talents;
+        this.hidePropertyPanel();
         core.start(propertyAllocate);
-        this.updateProperty();
         this.onNext();
     }
 
@@ -96,14 +102,7 @@ export default class CyberTrajectory extends ui.view.CyberTheme.CyberTrajectoryU
     }
 
     updateProperty() {
-        const types = core.PropertyTypes;
-        const propertys = core.propertys;
-
-        this.labCharm.text = propertys[types.CHR];
-        this.labIntelligence.text = propertys[types.INT];
-        this.labStrength.text = propertys[types.STR];
-        this.labMoney.text = propertys[types.MNY];
-        this.labSpirit.text = propertys[types.SPR];
+        // Player-facing attributes are intentionally hidden.
     }
 
     onNext() {
@@ -153,6 +152,7 @@ export default class CyberTrajectory extends ui.view.CyberTheme.CyberTrajectoryU
 
     renderTrajectory(age, content) {
         const item = this.#createTrajectoryItem();
+        const grade = content.reduce((max, { grade = 0 }) => Math.max(max, grade), 0);
         item.labAge.text = ''+age;
         item.labContent.text = content.map(
             ({type, description, grade, name, postEvent}) => {
@@ -166,7 +166,7 @@ export default class CyberTrajectory extends ui.view.CyberTheme.CyberTrajectoryU
         ).join('\n');
         $_.deepMapSet(
             item.boxGrade,
-            $ui.common.gradeBlk[content[content.length - 1].grade || 0]
+            $ui.common.gradeBlk[grade]
         );
         this.vboxTrajectory.addChild(item);
         this.#trajectoryItems.push(item);

@@ -62,10 +62,16 @@ location.search.substr(1).split('&').forEach(item => {
 });
 
 core.config({
-    defaultPropertyPoints: 20, // default number of points for a property
+    defaultPropertyPoints: 0, // attributes are hidden from the player loop
     talentSelectLimit: 3, // max number of talents that can be selected
     propertyAllocateLimit: [0, 10], // scoop of properties that can be allocated,
-    defaultPropertys: { SPR: 5 }, // default properties
+    defaultPropertys: {
+        CHR: 5,
+        INT: 5,
+        STR: 5,
+        MNY: 5,
+        SPR: 5,
+    }, // keep a neutral hidden baseline for legacy event conditions
     talentConfig: { // config for talent
         talentPullCount: 10, // number of talents to pull from the talent pool
         talentRate: { 1:100, 2:10, 3:1, total: 1000 }, // rate of talent pull

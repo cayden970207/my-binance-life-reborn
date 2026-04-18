@@ -1,4 +1,5 @@
 import { mountShareButton, unmountShareButton } from '../../share-card.js';
+import { formatUsdShort, getCurrentUniverseResult } from '../../universe-result.js';
 
 export default class Summary extends ui.view.DefaultTheme.SummaryUI {
     constructor() {
@@ -19,24 +20,42 @@ export default class Summary extends ui.view.DefaultTheme.SummaryUI {
     }
 
     init({talents, enableExtend}) {
-        const {summary, lastExtendTalent} = core;
+        const {lastExtendTalent} = core;
         this.#enableExtend = enableExtend;
+        const universe = getCurrentUniverseResult(core, { persist: true });
+
+        this.title.text = '平行宇宙结果';
 
         this.listSummary.array = [
-            [core.PropertyTypes.HCHR, $lang.UI_Property_Charm],
-            [core.PropertyTypes.HINT, $lang.UI_Property_Intelligence],
-            [core.PropertyTypes.HSTR, $lang.UI_Property_Strength],
-            [core.PropertyTypes.HMNY, $lang.UI_Property_Money],
-            [core.PropertyTypes.HSPR, $lang.UI_Property_Spirit],
-            [core.PropertyTypes.HAGE, $lang.UI_Final_Age],
-            [core.PropertyTypes.SUM, $lang.UI_Total_Judge],
-        ].map(([type, key]) => {
-            const data = summary[type];
-            return {
-                label: `${key}${$lang.UI_Colon} ${data.value} ${$lang[data.judge]}`,
-                grade: data.grade,
-            }
-        });
+            {
+                label: `${universe.czCode} · 享年 ${universe.age}`,
+                grade: universe.rarityGrade,
+            },
+            {
+                label: `这个平行宇宙的你 · ${universe.title}`,
+                grade: universe.rarityGrade,
+            },
+            {
+                label: `终局资产: ${formatUsdShort(universe.finalNetWorth)}`,
+                grade: universe.finalNetWorth < 0 ? 0 : Math.max(1, universe.rarityGrade),
+            },
+            {
+                label: `峰值资产: ${formatUsdShort(universe.peakNetWorth)}`,
+                grade: Math.max(1, universe.rarityGrade),
+            },
+            {
+                label: `蒸发资产: ${formatUsdShort(universe.drawdown)}`,
+                grade: universe.drawdown > 0 ? Math.max(1, universe.rarityGrade) : 0,
+            },
+            {
+                label: `这个版本: ${universe.tags.join(' / ')}`,
+                grade: Math.min(3, Math.max(1, universe.rarityGrade)),
+            },
+            {
+                label: `评语: ${universe.epitaph}`,
+                grade: Math.min(3, universe.rarityGrade),
+            },
+        ];
 
         talents.sort(({id:a, grade:ag}, {id:b, grade:bg},)=>{
             if(a == lastExtendTalent) return -1;
@@ -54,7 +73,7 @@ export default class Summary extends ui.view.DefaultTheme.SummaryUI {
     renderSummary(box) {
         const {label, grade} = box.dataSource;
         box.label = label;
-        $_.deepMapSet(box, $ui.common.summary[grade]);
+        $_.deepMapSet(box, $ui.common.summary[Math.min(3, grade || 0)]);
     }
     renderTalent(box) {
         const dataSource = box.dataSource;

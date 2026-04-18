@@ -352,6 +352,17 @@ function injectStyles() {
       border-color: #F0B90B;
       box-shadow: 3px 3px 0 rgba(240,185,11,0.3);
     }
+    .bsc-action-primary {
+      background: linear-gradient(135deg, #F0B90B 0%, #FCD535 100%);
+      color: #0B0E11;
+      font-size: 15px;
+      padding: 12px 16px;
+      min-width: 100%;
+      box-shadow: 4px 4px 0 #000;
+    }
+    .bsc-action-primary:hover {
+      box-shadow: 6px 6px 0 #000;
+    }
     .bsc-close {
       position: absolute;
       top: 12px;
@@ -589,7 +600,7 @@ function showToast(msg) {
   setTimeout(() => t.remove(), 2000);
 }
 
-export function openShareCard() {
+export function openShareCard({ onRestart } = {}) {
   const data = getRunData();
   if (!data) {
     showToast('尚无本局数据,请先完成一次人生');
@@ -606,10 +617,11 @@ export function openShareCard() {
   overlay.innerHTML = `
     <div class="bsc-modal">
       <div id="bsc-card" class="${isLegendary ? 'bsc-legendary' : ''}">
-        <button class="bsc-close" aria-label="close">×</button>
+        ${onRestart ? '' : '<button class="bsc-close" aria-label="close">×</button>'}
         ${renderCard(data)}
       </div>
       <div class="bsc-actions">
+        ${onRestart ? '<button class="bsc-action bsc-action-primary" id="bsc-restart">↻ 再来一把</button>' : ''}
         <button class="bsc-action" id="bsc-download">📥 下载PNG</button>
         <button class="bsc-action" id="bsc-tweet">🐦 发到推特</button>
         <button class="bsc-action bsc-action-sec" id="bsc-copy">📋 复制文字</button>
@@ -617,10 +629,18 @@ export function openShareCard() {
     </div>
   `;
 
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
+  // 只有在非"结局卡"模式下才能点击外部关闭
+  if (!onRestart) {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.remove();
+    });
+    overlay.querySelector('.bsc-close')?.addEventListener('click', () => overlay.remove());
+  }
+
+  overlay.querySelector('#bsc-restart')?.addEventListener('click', () => {
+    overlay.remove();
+    onRestart();
   });
-  overlay.querySelector('.bsc-close').addEventListener('click', () => overlay.remove());
 
   overlay.querySelector('#bsc-download').addEventListener('click', async () => {
     const cardEl = overlay.querySelector('#bsc-card');

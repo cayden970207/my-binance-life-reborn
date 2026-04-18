@@ -1,4 +1,5 @@
 import { showChoiceModal } from '../../choice-modal.js';
+import { openShareCard } from '../../share-card.js';
 
 export default class Trajectory extends ui.view.DefaultTheme.TrajectoryUI {
     constructor() {
@@ -154,8 +155,14 @@ export default class Trajectory extends ui.view.DefaultTheme.TrajectoryUI {
     }
 
     onSummary() {
-        const talents = this.#talents;
-        $ui.switchView(UI.pages.SUMMARY, {talents, enableExtend: this.#enableExtend});
+        // 跳过SUMMARY页,直接显示分享卡 + 再来一把按钮
+        openShareCard({
+            onRestart: () => {
+                core.talentExtend(null); // 不继承天赋,每次新开
+                core.times ++;
+                $ui.switchView(UI.pages.MAIN);
+            }
+        });
     }
 
     get speed() {

@@ -48,8 +48,8 @@ export default ({
     UI_Manual: '手动',
     UI_Auto: '自动',
 
-    UI_Goto_Summary: '人生总结',
-    UI_Title_Summary: '人生总结',
+    UI_Goto_Summary: '查看结局',
+    UI_Title_Summary: '查看结局',
     UI_Talent_Extend: '天赋：你可以选择一个，下辈子还能抽到',
     UI_Remake_Again: '再次重开',
 

@@ -1,4 +1,5 @@
 import { showChoiceModal } from '../../choice-modal.js';
+import { openShareCard } from '../../share-card.js';
 
 export default class CyberTrajectory extends ui.view.CyberTheme.CyberTrajectoryUI {
     #pausedForChoice = false;
@@ -173,8 +174,13 @@ export default class CyberTrajectory extends ui.view.CyberTheme.CyberTrajectoryU
     }
 
     onSummary() {
-        const talents = this.#talents;
-        $ui.switchView(UI.pages.SUMMARY, { talents, enableExtend: this.#enableExtend });
+        openShareCard({
+            onRestart: () => {
+                core.talentExtend(null);
+                core.times ++;
+                $ui.switchView(UI.pages.MAIN);
+            }
+        });
     }
 
     get speed() {

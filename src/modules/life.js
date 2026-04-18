@@ -135,10 +135,10 @@ class Life {
         const {age, event, talent, cameo} = this.#property.ageNext();
 
         const talentContent = this.doTalent(talent);
-        const eventId = this.random(event);
+        const eventId = this.random(event, 'main');
         const eventContent = eventId ? this.doEvent(eventId) : [];
         const hasChoice = eventContent.some(item => item?.choices?.length);
-        const cameoId = (!hasChoice && !this.#property.isEnd()) ? this.random(cameo) : null;
+        const cameoId = (!hasChoice && !this.#property.isEnd()) ? this.random(cameo, 'cameo') : null;
         const cameoContent = cameoId ? this.doEvent(cameoId) : [];
 
         const isEnd = this.#property.isEnd();
@@ -209,13 +209,61 @@ class Life {
         if (choice.flag) this.#property.change(this.PropertyTypes.EVT, choice.flag);
     }
 
-    random(events) {
+    random(events, slot = 'main') {
         if(!Array.isArray(events) || !events.length) return null;
+        const age = this.#property.get(this.PropertyTypes.AGE);
         const available = events.filter(
             ([eventId])=>this.#event.check(eventId, this.#property)
         );
         if(!available.length) return null;
-        return util.weightRandom(available);
+        return util.weightRandom(
+            available.map(([eventId, weight]) => [
+                eventId,
+                this.tuneEventWeight(eventId, weight, age, slot),
+            ])
+        );
+    }
+
+    tuneEventWeight(eventId, weight, age, slot = 'main') {
+        if(slot === 'cameo') return weight;
+
+        const { grade = 0, choices, description = '' } = this.#event.information(eventId);
+        let multiplier = 1;
+        const inRange = (lo, hi) => eventId >= lo && eventId <= hi;
+
+        if(choices?.length) multiplier *= 3;
+
+        if(age >= 23 && age <= 30) {
+            if(inRange(10700, 10999)) multiplier *= 1.35;
+            if(inRange(11800, 11899)) multiplier *= 0.75;
+            if(inRange(12000, 12299)) multiplier *= 0.55;
+        }
+
+        if(age >= 31 && age <= 36) {
+            if(inRange(10800, 10999)) multiplier *= 1.45;
+            if(inRange(11800, 11899)) multiplier *= 0.7;
+            if(inRange(12000, 12299)) multiplier *= 0.55;
+        }
+
+        if(age >= 37 && age <= 55) {
+            if(inRange(10900, 11499)) multiplier *= 1.5;
+            if(grade >= 3) multiplier *= 1.9;
+            else if(grade >= 2) multiplier *= 1.25;
+            else multiplier *= 0.9;
+            if(inRange(11800, 11899)) multiplier *= 0.6;
+            if(inRange(12000, 12299)) multiplier *= 0.45;
+            if(inRange(13000, 13209)) multiplier *= 0.7;
+        }
+
+        if(age >= 56 && age <= 70) {
+            if(inRange(11880, 11940)) multiplier *= 1.2;
+        }
+
+        if(/徐明星|何一|孙宇晨/u.test(description)) {
+            multiplier *= 1.15;
+        }
+
+        return weight * multiplier;
     }
 
     talentRandom() {

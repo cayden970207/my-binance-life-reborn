@@ -39,8 +39,8 @@ class Event {
     }
 
     information(eventId) {
-        const { event: description } = this.get(eventId)
-        return { description };
+        const { event: description, grade, choices, postEvent } = this.get(eventId)
+        return { description, grade, choices, postEvent };
     }
 
     do(eventId) {

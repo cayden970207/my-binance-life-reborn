@@ -1,5 +1,6 @@
 import { showChoiceModal } from '../../choice-modal.js';
 import { openShareCard } from '../../share-card.js';
+import { buildTrajectoryText } from '../../trajectory-text.js';
 
 export default class Trajectory extends ui.view.DefaultTheme.TrajectoryUI {
     constructor() {
@@ -138,16 +139,7 @@ export default class Trajectory extends ui.view.DefaultTheme.TrajectoryUI {
         const item = this.#createTrajectoryItem();
         const grade = content.reduce((max, { grade = 0 }) => Math.max(max, grade), 0);
         item.labAge.text = ''+age;
-        item.labContent.text = content.map(
-            ({type, description, grade, name, postEvent}) => {
-                switch(type) {
-                    case 'TLT':
-                        return `天赋【${name}】发动：${description}`;
-                    case 'EVT':
-                        return description + (postEvent?`\n${postEvent}`:'');
-                }
-            }
-        ).join('\n');
+        item.labContent.text = buildTrajectoryText(age, content);
         item.grade(grade);
         this.vboxTrajectory.addChild(item);
         this.#trajectoryItems.push(item);

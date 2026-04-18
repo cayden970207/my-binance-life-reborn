@@ -115,33 +115,17 @@ function injectStyles() {
       background: #F0B90B;
       color: #0B0E11;
     }
-    .bc-choice-effect {
-      display: inline-block;
-      margin-left: 8px;
-      font-size: 11px;
+    .bc-hint {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(240,185,11,0.2);
       color: #848E9C;
+      font-size: 12px;
+      line-height: 1.6;
       letter-spacing: 1px;
     }
-    .bc-effect-pos { color: #0ECB81; }
-    .bc-effect-neg { color: #F6465D; }
   `;
   document.head.appendChild(s);
-}
-
-// 属性标签映射
-const PROP_LABELS = { CHR: '魅', INT: '技', STR: '道', MNY: '商', SPR: '乐', LIF: '命' };
-
-function formatEffect(effect) {
-  if (!effect) return '';
-  const parts = [];
-  for (const [k, v] of Object.entries(effect)) {
-    if (v === 0) continue;
-    const label = PROP_LABELS[k] || k;
-    const sign = v > 0 ? '+' : '';
-    const cls = v > 0 ? 'bc-effect-pos' : 'bc-effect-neg';
-    parts.push(`<span class="${cls}">${label}${sign}${v}</span>`);
-  }
-  return parts.join(' ');
 }
 
 export function showChoiceModal({ age, question, choices }, onPick) {
@@ -155,16 +139,16 @@ export function showChoiceModal({ age, question, choices }, onPick) {
         <span class="bc-choice-index">${String.fromCharCode(65 + i)}</span>
         <span>${c.label}</span>
       </span>
-      <div class="bc-choice-effect">${formatEffect(c.effect)}</div>
     </button>
   `).join('');
 
   overlay.innerHTML = `
     <div class="bc-modal">
       <span class="bc-age">${age != null ? `${age} 岁` : ''}</span>
-      <div class="bc-badge">⚡ 人 生 抉 择</div>
+      <div class="bc-badge">关 键 抉 择</div>
       <div class="bc-question">${question}</div>
       <div class="bc-choices">${choicesHtml}</div>
+      <div class="bc-hint">这一步会影响这条平行宇宙接下来的走向。</div>
     </div>
   `;
 

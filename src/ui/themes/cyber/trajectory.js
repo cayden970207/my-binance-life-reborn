@@ -1,5 +1,6 @@
 import { showChoiceModal } from '../../choice-modal.js';
 import { openShareCard } from '../../share-card.js';
+import { buildTrajectoryText } from '../../trajectory-text.js';
 
 export default class CyberTrajectory extends ui.view.CyberTheme.CyberTrajectoryUI {
     #pausedForChoice = false;
@@ -154,16 +155,7 @@ export default class CyberTrajectory extends ui.view.CyberTheme.CyberTrajectoryU
         const item = this.#createTrajectoryItem();
         const grade = content.reduce((max, { grade = 0 }) => Math.max(max, grade), 0);
         item.labAge.text = ''+age;
-        item.labContent.text = content.map(
-            ({type, description, grade, name, postEvent}) => {
-                switch(type) {
-                    case 'TLT':
-                        return `天赋【${name}】发动：${description}`;
-                    case 'EVT':
-                        return description + (postEvent?`\n${postEvent}`:'');
-                }
-            }
-        ).join('\n');
+        item.labContent.text = buildTrajectoryText(age, content);
         $_.deepMapSet(
             item.boxGrade,
             $ui.common.gradeBlk[grade]

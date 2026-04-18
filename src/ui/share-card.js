@@ -2,7 +2,7 @@
 // 当summary页面激活时注入分享按钮,点击生成精美卡片
 
 const GAME_TITLE = '转生之我的币安人生';
-const GAME_URL = 'bianansimulator.io'; // 部署后换成实际URL
+const GAME_URL = 'my-binance-life-reborn.vercel.app';
 
 const cardQuotes = [
   '继续走,就能出来。',

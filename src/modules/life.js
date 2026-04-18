@@ -41,6 +41,7 @@ class Life {
     #defaultPropertys;
     #specialThanks;
     #initialData;
+    #runSeed;
 
     async initial(i18nLoad, commonLoad) {
         const [age, talents, events, achievements, characters, specialThanks] = await Promise.all([
@@ -117,6 +118,7 @@ class Life {
         for(const key in allocation) {
             this.#initialData[key] = util.clone(allocation[key]);
         }
+        this.#runSeed = Math.floor(Math.random() * 0x7fffffff);
         this.#property.restart(this.#initialData);
         this.doTalent()
         this.#property.restartLastStep();
@@ -179,6 +181,7 @@ class Life {
                 name,
                 grade,
                 description: this.format(description),
+                toneSeed: this.#runSeed,
             })
             if(!effect) continue;
             this.#property.effect(effect);
@@ -197,6 +200,7 @@ class Life {
             grade,
             choices, // 选择事件:let前端暂停并弹窗
             eventId, // 追溯用
+            toneSeed: this.#runSeed,
         }
         if(next) return [content, this.doEvent(next)].flat();
         return [content];

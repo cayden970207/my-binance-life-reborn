@@ -43,6 +43,13 @@ const COMMENTARY_POOLS = {
   ],
 };
 
+const CHOICE_ECHOES = [
+  '你押向了「{label}」,这条宇宙从这里开始歪向另一个版本。',
+  '你最后点了「{label}」,后面的路已经不可能再完全一样。',
+  '你把答案交给了「{label}」,命运开始往这个方向写后文。',
+  '你选了「{label}」,表面只是一瞬间,实际会改掉后半生的语气。',
+];
+
 function hashString(input = '') {
   let hash = 2166136261;
   for (let i = 0; i < input.length; i += 1) {
@@ -57,6 +64,11 @@ function pickCommentary(pool, key) {
   return pool[hashString(key) % pool.length];
 }
 
+export function buildChoiceEcho(label, toneSeed = Math.random()) {
+  const template = pickCommentary(CHOICE_ECHOES, `${label}-${toneSeed}`);
+  return template.replace('{label}', label);
+}
+
 function formatChapter(age) {
   const chapter = AGE_CHAPTERS[age];
   if (!chapter) return '';
@@ -66,6 +78,7 @@ function formatChapter(age) {
 
 function classifyEvent({ type, description = '', eventId, grade }) {
   if (type === 'TLT') return '【天赋】';
+  if (type === 'CHOICE') return '【你的选择】';
   if (description.startsWith('→ 你选择了:')) return '【你的选择】';
   if (eventId >= 12306 && eventId <= 12309) return '【伙伴】';
   if ((eventId >= 12300 && eventId <= 12305) || (eventId >= 12310 && eventId <= 12313)) return '【人物】';
@@ -79,18 +92,17 @@ function classifyEvent({ type, description = '', eventId, grade }) {
 function normalizeDescription(entry) {
   const { type, description = '', name } = entry;
   if (type === 'TLT') return `${name}：${description}`;
-  if (description.startsWith('→ 你选择了:')) {
-    return description.replace(/^→\s*/u, '');
-  }
+  if (type === 'CHOICE') return description;
+  if (description.startsWith('→ 你选择了:')) return description.replace(/^→\s*/u, '');
   return description.replace(/^【抉择】\s*/u, '');
 }
 
 function commentaryCategory(entry, prefix) {
+  if (entry.type === 'CHOICE') return 'choice';
   if (prefix === '【伙伴】') return 'partner';
   if (prefix === '【人物】') return 'person';
   if (prefix === '【危机】') return 'crisis';
   if (prefix === '【高光】') return 'highlight';
-  if (prefix === '【你的选择】') return 'choice';
   if ((entry.grade || 0) >= 3) return 'key';
   return null;
 }
@@ -103,7 +115,7 @@ function formatEntry(entry) {
   const commentary = commentaryType
     ? pickCommentary(
         COMMENTARY_POOLS[commentaryType],
-        `${entry.eventId || body}-${entry.description || body}-${entry.grade || 0}`
+        `${entry.toneSeed || ''}-${entry.eventId || body}-${entry.description || body}-${entry.grade || 0}`
       )
     : '';
   const aside = commentary ? `\n旁白：${commentary}` : '';

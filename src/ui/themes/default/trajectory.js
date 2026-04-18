@@ -1,6 +1,6 @@
 import { showChoiceModal } from '../../choice-modal.js';
 import { openShareCard } from '../../share-card.js';
-import { buildTrajectoryText } from '../../trajectory-text.js';
+import { buildChoiceEcho, buildTrajectoryText } from '../../trajectory-text.js';
 
 export default class Trajectory extends ui.view.DefaultTheme.TrajectoryUI {
     constructor() {
@@ -121,9 +121,10 @@ export default class Trajectory extends ui.view.DefaultTheme.TrajectoryUI {
                 core.applyChoice(picked);
                 // 在轨迹上追加一行"你选择了:xxx"
                 this.renderTrajectory(age, [{
-                    type: 'EVT',
-                    description: `→ 你选择了:${picked.label}`,
+                    type: 'CHOICE',
+                    description: buildChoiceEcho(picked.label),
                     grade: choiceItem.grade || 2,
+                    toneSeed: Math.random(),
                 }]);
                 this.updateProperty();
                 this.#pausedForChoice = false;

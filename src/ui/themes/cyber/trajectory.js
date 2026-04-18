@@ -1,6 +1,6 @@
 import { showChoiceModal } from '../../choice-modal.js';
 import { openShareCard } from '../../share-card.js';
-import { buildTrajectoryText } from '../../trajectory-text.js';
+import { buildChoiceEcho, buildTrajectoryText } from '../../trajectory-text.js';
 
 export default class CyberTrajectory extends ui.view.CyberTheme.CyberTrajectoryUI {
     #pausedForChoice = false;
@@ -140,9 +140,10 @@ export default class CyberTrajectory extends ui.view.CyberTheme.CyberTrajectoryU
             }, (picked) => {
                 core.applyChoice(picked);
                 this.renderTrajectory(age, [{
-                    type: 'EVT',
-                    description: `→ 你选择了:${picked.label}`,
+                    type: 'CHOICE',
+                    description: buildChoiceEcho(picked.label),
                     grade: choiceItem.grade || 2,
+                    toneSeed: Math.random(),
                 }]);
                 this.updateProperty();
                 this.#pausedForChoice = false;
